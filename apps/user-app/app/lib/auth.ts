@@ -16,7 +16,8 @@ export const authOptions = {
             const hashedPassword = await bcrypt.hash(credentials.password, 10);
             const existingUser = await prisma.user.findFirst({
                 where: {
-                    number: credentials.phone
+                //     If your database schema defines the number field as a String type, this query works perfectly. However, if your Prisma Model tracks number as a database BigInt or Integer, passing the raw string text directly from credentials.phone will cause Prisma to throw a type validation error and halt execution.
+                    number: String(credentials.phone)
                 }
             });
 
@@ -35,7 +36,7 @@ export const authOptions = {
             try {
                 const user = await prisma.user.create({
                     data: {
-                        number: credentials.phone,
+                        number: String(credentials.phone),
                         password: hashedPassword
                     }
                 });
@@ -55,11 +56,17 @@ export const authOptions = {
     ],
     secret: process.env.JWT_SECRET || "secret",
     callbacks: {
-        // TODO: can u fix the type here? Using any is bad
-        async session({ token, session }: any) {
-            session.user.id = token.sub
-
-            return session
+        async jwt({ token, user }: any) {
+            if (user) {
+            token.id = user.id;
+            }
+            return token;
+        },
+        async session({ session, token }: any) {
+            if (session.user) {
+            session.user.id = token.id || token.sub;
+            }
+            return session;
         }
     }
   }
