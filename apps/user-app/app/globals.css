@@ -1,1 +1,8 @@
-@import "@repo/ui/styles.css"; 
+/* 1. Inject the core Tailwind v4 styles engine first */
+@import "tailwindcss";
+
+/* 2. Import your shared workspace design tokens/styles if needed */
+@import "@repo/ui/styles.css";
+
+/* 3. Explicitly tell Tailwind to scan your shared monorepo components folder */
+@source "../../packages/ui/src/**/*.{js,ts,jsx,tsx,mdx}";

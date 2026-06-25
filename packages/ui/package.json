@@ -5,15 +5,20 @@
   "exports": {
     "./styles.css": "./dist/styles.css",
     "./*": "./src/*.tsx",
+    "./button": "./src/button.tsx",
+    "./card": "./src/card.tsx",
+    "./code": "./src/code.tsx",
     "./appbar": "./src/Appbar.tsx",
-    "./card": "./src/card.tsx"
+    "./center": "./src/Center.tsx",
+    "./select": "./src/Select.tsx",
+    "./textinput": "./src/TextInput.tsx"
   },
   "scripts": {
     "lint": "eslint . --max-warnings 0",
     "generate:component": "turbo gen react-component",
     "check-types": "tsc --noEmit",
     "build:css": "tailwindcss -i ./styles.css -o ./dist/styles.css --minify",
-    "build": "npm run build:css && tsc", 
+    "build": "npm run build:css && tsc",
     "dev": "npx @tailwindcss/cli -i ./styles.css -o ./dist/styles.css --watch"
   },
   "devDependencies": {
@@ -33,6 +38,7 @@
   ],
   "dependencies": {
     "react": "^19.2.0",
-    "react-dom": "^19.2.0"
+    "react-dom": "^19.2.0",
+    "react-router-dom": "^7.18.0"
   }
 }

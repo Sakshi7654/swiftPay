@@ -25,7 +25,9 @@
   "dependencies": {
     "@emnapi/runtime": "^1.10.0",
     "baseline-browser-mapping": "^2.10.38",
+    "cookie": "^1.1.1",
     "emnapi": "^1.11.1",
-    "npm-cli": "^0.1.0"
+    "npm-cli": "^0.1.0",
+    "postgres-array": "^3.0.4"
   }
 }
