@@ -3,7 +3,8 @@ import { authOptions } from "../../lib/auth";
 import { prisma } from "@repo/db/client";
 import { SendCard } from "../../../components/SendCard";
 import { P2PTxns } from "../../../components/P2PTxns";
-
+//server component, securely can fetches data on load and renders 
+//runs on backend server
 // helper function to fetch P2P transfers
 async function getP2PTransactions(userId: number) {
     const txns = await prisma.p2pTransfer.findMany({

@@ -7,9 +7,7 @@ export async function p2pTransfer(to: string, amount: number) { // to is phone n
     const session = await getServerSession(authOptions);
     const from = session?.user?.id;
     if (!from) {
-        return {
-            message: "Error while sending"
-        }
+        return { status: "error", message: "Authentication required" };
     }
     const toUser = await prisma.user.findFirst({
         where: {
@@ -18,12 +16,27 @@ export async function p2pTransfer(to: string, amount: number) { // to is phone n
     });
 
     if (!toUser) {
-        return {
-            message: "User not found"
-        }
+        return { status: "error", message: "Recipient user phone number not found" };
     }
-    await prisma.$transaction(async (tx) => {
-        await tx.$queryRaw`SELECT * FROM "Balance" WHERE "userId" = ${Number(from)} FOR UPDATE`; //locking
+
+    const senderId = Number(from);
+    const receiverId = toUser.id;
+
+    if (senderId === receiverId) {
+        return { status: "error", message: "You cannot transfer funds to your own wallet" };
+    }
+
+    // deterministic Lock Ordering
+    // always sort the ids numerically so rows are locked in the exact same sequence across all concurrent threads
+    const [lowerId, higherId] = senderId < receiverId ? [senderId, receiverId] : [receiverId, senderId];
+
+    try{
+        await prisma.$transaction(async (tx) => {
+            // lock the lower id row first
+            await tx.$queryRaw`SELECT * FROM "Balance" WHERE "userId" = ${lowerId} FOR UPDATE`;
+            // then second
+            await tx.$queryRaw`SELECT * FROM "Balance" WHERE "userId" = ${higherId} FOR UPDATE`;
+        // await tx.$queryRaw`SELECT * FROM "Balance" WHERE "userId" = ${Number(from)} FOR UPDATE`; //locking
         // in mongodb if some another request comes, then it will revert it back automatically, so no locking in mongodb
         // types of lock read only, two person can read but not write
 
@@ -63,4 +76,14 @@ export async function p2pTransfer(to: string, amount: number) { // to is phone n
             }
           })
     });
+    return { status: "success", message: "Transfer completed successfully" };
+
+    }catch (error: any) {
+        return { 
+            status: "error", 
+            message: error.message === "Insufficient funds for this transaction request" 
+                ? "Insufficient funds inside your wallet balance" 
+                : "Transaction failed due to processing error" 
+        };
+    }
 }

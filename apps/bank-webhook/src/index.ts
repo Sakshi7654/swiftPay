@@ -1,6 +1,7 @@
 import express from "express";
 import cors from "cors";
 import { prisma } from "@repo/db/client";
+import { mockBankRouter } from "./mockBankCore"; //external bank simulator routes
 
 const app = express();
 app.use(express.json());
@@ -11,10 +12,15 @@ app.use(cors({
     allowedHeaders: ["Content-Type", "Authorization"]
 }));
 
+// this mounts the bank's independent endpoints onto your running instance
+app.use("/api/mock-bank-core", mockBankRouter);
+
+
 // can add zod validation
-// check if this request actually came from hdfc bank, use a webhook secret here
 
 // the moment a user approves a deposit on the dummy bank webpage, the bank's system automatically fires a POST network request to  http://..hdfcWebhook route.
+
+// CREDITS THE WALLET BALANCE
 app.post("/hdfcWebhook", async (req, res) => {
     const paymentInformation = {
         token: req.body.token,
@@ -28,6 +34,14 @@ app.post("/hdfcWebhook", async (req, res) => {
 //  in this apporach double money could be credited but will show correct entry in db
 
     try {
+        // Idempotency guard: Verify we haven't already marked this transaction Success
+        const existingTxn = await prisma.onRampTransaction.findUnique({
+            where: { token: paymentInformation.token }
+        });
+
+        if (existingTxn?.status === "Success") {
+            return res.status(200).json({ message: "Already processed successfully" });
+        }
         //atomic transaction
         await prisma.$transaction([
             
@@ -67,4 +81,4 @@ app.post("/hdfcWebhook", async (req, res) => {
         return res.status(500).json({ message: "Failed to process webhook safely. Transaction rolled back." });
     }
 }) 
-app.listen(3003)
+app.listen(3003,()=> console.log("webhook server and bank engine running"))

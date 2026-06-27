@@ -6,9 +6,8 @@ import { useState } from "react";
 export default function BankMockPage() {
     const searchParams = useSearchParams();
     const router = useRouter();
-    const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+    const [status, setStatus] = useState<"idle" | "loading" | "Success" | "error">("idle");
 
-    // 1. extract transaction parameters from the URL query string
     const token = searchParams.get("token");
     const userId = searchParams.get("user_identifier");
     const amount = searchParams.get("amount");
@@ -17,22 +16,20 @@ export default function BankMockPage() {
         setStatus("loading");
 
         try {
-            // 2. automatically hit our bank-webhook backend directly from the browser
-            const response = await fetch("http://localhost:3003/hdfcWebhook", {
+            //hit the bank backend confirm endpoint, NOT the wallet webhook directly
+            const response = await fetch("http://localhost:3003/api/mock-bank-core/confirm", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                 },
                 body: JSON.stringify({
                     token: token,
-                    user_identifier: userId,
-                    amount: amount
+                    userId: Number(userId)
                 }),
             });
 
             if (response.ok) {
-                setStatus("success");
-                // 3. take the user back to their active wallet dashboard automatically
+                setStatus("Success");
                 setTimeout(() => {
                     router.push("/transfer");
                 }, 1500);
@@ -40,11 +37,10 @@ export default function BankMockPage() {
                 setStatus("error");
             }
         } catch (err) {
-            console.error("Webhook redirection failure:", err);
+            console.error("Bank gateway crash error:", err);
             setStatus("error");
         }
     };
-
     return (
         <div className="min-h-screen flex items-center justify-center bg-slate-100 p-4">
             <div className="bg-white p-8 rounded-2xl shadow-xl max-w-md w-full border border-slate-200 text-center space-y-6">
@@ -69,7 +65,7 @@ export default function BankMockPage() {
                 )}
 
                 {status === "loading" && <p className="text-sm font-bold text-amber-500 animate-pulse">Communicating with SwiftPay Core Servers...</p>}
-                {status === "success" && <p className="text-sm font-bold text-emerald-600 bg-emerald-50 p-2.5 rounded-lg border border-emerald-200">✅ Payment Captured! Redirecting back to wallet...</p>}
+                {status === "Success" && <p className="text-sm font-bold text-emerald-600 bg-emerald-50 p-2.5 rounded-lg border border-emerald-200">✅ Payment Captured! Redirecting back to wallet...</p>}
                 {status === "error" && <p className="text-sm font-bold text-rose-600 bg-rose-50 p-2.5 rounded-lg border border-rose-200">❌ Webhook Connection Refused. Ensure port 3003 is running.</p>}
             </div>
         </div>
