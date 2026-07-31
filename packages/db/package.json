@@ -27,6 +27,7 @@
     "postgres-array": "^3.0.4"
   },
   "prisma": {
-    "seed": "tsx prisma/seed.ts"
+    "seed": "tsx prisma/seed.ts",
+    "build": "prisma generate"
   }
 }
